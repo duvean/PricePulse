@@ -3,7 +3,7 @@ import { sequelize } from '../config/database.js';
 
 export class Item extends Model {
   declare id: number;
-  declare wbId: number;
+  declare article: number;
   declare name: string;
   declare currentPrice: number;
   declare oldPrice: number;
@@ -13,7 +13,7 @@ export class Item extends Model {
 
 Item.init({
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  wbId: { type: DataTypes.BIGINT, allowNull: false },
+  article: { type: DataTypes.BIGINT, allowNull: false },
   name: { type: DataTypes.STRING, allowNull: false },
   currentPrice: { type: DataTypes.INTEGER, allowNull: false },
   oldPrice: { type: DataTypes.INTEGER, defaultValue: 0 },

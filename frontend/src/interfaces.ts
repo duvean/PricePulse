@@ -19,7 +19,7 @@ export const Data = undefined;
 
 export interface WbItem {
     id: number;
-    wbId: number;
+    article: number;
     name: string;
     currentPrice: number;
     oldPrice: number;

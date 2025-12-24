@@ -2,48 +2,70 @@ import { Router } from 'express';
 import { Item } from '../models/Item.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { parseWbItem } from '../services/wbService.js';
+import { parseOzonItem } from '../services/ozonService.js';
 
 const router = Router();
 
-// Получить все товары пользователя
 router.get('/', authenticateToken, async (req: any, res) => {
     const items = await Item.findAll({ where: { userId: req.user.userId } });
     res.json(items);
 });
 
-// Добавить товар по ссылке
 router.post('/', authenticateToken, async (req: any, res) => {
     try {
-        const { url } = req.body; // Пользователь шлет ссылку
-        
-        // 1. Парсим данные с WB
-        const wbData = await parseWbItem(url);
+        const { url } = req.body;
+        console.log('DEBUG: Содержимое req.user:', req.user);
+        const currentUserId = req.user?.userId || req.user?.id || req.user?.sub;
+        console.log('DEBUG: Итоговый targetUserId для базы:', currentUserId);
 
-        // 2. Проверяем, не добавлен ли уже этот товар
-        const existing = await Item.findOne({ where: { wbId: wbData.wbId, userId: req.user.userId } });
+        if (!currentUserId) {
+            throw new Error("ID пользователя не найден в токене. Проверьте auth middleware.");
+        }
+
+        let itemData;
+        if (url.includes('ozon.ru')) {
+            itemData = await parseOzonItem(url);
+        } else {
+            itemData = await parseWbItem(url);
+        }
+
+        const article = itemData.article || (itemData as any).wbId;
+
+        const existing = await Item.findOne({ 
+            where: { 
+                article: article, 
+                userId: currentUserId 
+            } 
+        });
+
         if (existing) {
-            // Если есть, можем обновить цену и остатки
-            await existing.update(wbData);
+            await existing.update({
+                ...itemData,
+                article: article
+            });
             return res.json(existing);
         }
 
-        // 3. Создаем новый товар
         const newItem = await Item.create({
-            ...wbData,
-            userId: req.user.userId
+            ...itemData,
+            article: article,
+            userId: currentUserId
         });
 
         res.json(newItem);
     } catch (error: any) {
-        console.error(error);
-        res.status(400).json({ error: error.message || 'Ошибка парсинга' });
+        console.error('Ошибка в POST /items:', error);
+        res.status(400).json({ error: error.message || 'Ошибка при добавлении товара' });
     }
 });
 
-// Удалить товар
 router.delete('/:id', authenticateToken, async (req: any, res) => {
-    await Item.destroy({ where: { id: req.params.id, userId: req.user.userId } });
-    res.json({ success: true });
+    try {
+        await Item.destroy({ where: { id: req.params.id, userId: req.user.userId } });
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: 'Ошибка при удалении' });
+    }
 });
 
 export default router;

@@ -74,7 +74,7 @@ export default function WbDashboard() {
                     <span className="old-price">{item.oldPrice} ₽</span>
                 )}
                 </div>
-                <p className="meta">Артикул: {item.wbId}</p>
+                <p className="meta">Артикул: {item.article}</p>
                 <button className="delete" onClick={() => handleDelete(item.id)}>Удалить</button>
             </div>
             </div>
