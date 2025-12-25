@@ -23,6 +23,7 @@ export interface WbItem {
     name: string;
     currentPrice: number;
     oldPrice: number;
+    targetPrice: number;
     imageUrl: string;
     stock?: number;
 }

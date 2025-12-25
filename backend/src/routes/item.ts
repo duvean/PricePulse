@@ -13,7 +13,7 @@ router.get('/', authenticateToken, async (req: any, res) => {
 
 router.post('/', authenticateToken, async (req: any, res) => {
     try {
-        const { url } = req.body;
+        const { url, targetPrice } = req.body;
         console.log('DEBUG: Содержимое req.user:', req.user);
         const currentUserId = req.user?.userId || req.user?.id || req.user?.sub;
         console.log('DEBUG: Итоговый targetUserId для базы:', currentUserId);
@@ -49,6 +49,7 @@ router.post('/', authenticateToken, async (req: any, res) => {
         const newItem = await Item.create({
             ...itemData,
             article: article,
+            targetPrice: targetPrice ? parseInt(targetPrice) : null,
             userId: currentUserId
         });
 

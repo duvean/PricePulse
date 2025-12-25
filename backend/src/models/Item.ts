@@ -7,6 +7,7 @@ export class Item extends Model {
   declare name: string;
   declare currentPrice: number;
   declare oldPrice: number;
+  declare targetPrice: number;
   declare imageUrl: string;
   declare userId: number;
 }
@@ -17,6 +18,7 @@ Item.init({
   name: { type: DataTypes.STRING, allowNull: false },
   currentPrice: { type: DataTypes.INTEGER, allowNull: false },
   oldPrice: { type: DataTypes.INTEGER, defaultValue: 0 },
+  targetPrice: { type: DataTypes.INTEGER, allowNull: true },
   imageUrl: { type: DataTypes.TEXT },
   userId: { type: DataTypes.INTEGER, allowNull: false }
 }, { sequelize, modelName: 'item' });
