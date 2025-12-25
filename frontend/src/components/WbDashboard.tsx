@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { apiFetch } from "../api";
 import { WbItem } from "../interfaces";
 
@@ -7,31 +8,62 @@ export default function WbDashboard() {
   const [urlInput, setUrlInput] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isAdding, setIsAdding] = useState(false); // Для плейсхолдера
+  const [sortBy, setSortBy] = useState("newest");  // Состояние фильтра
 
   const loadItems = async () => {
-    const res = await apiFetch("/items");
-    if (res.ok) setItems(await res.json());
+      const res = await apiFetch("/items");
+      if (res.ok) {
+        let data = await res.json();
+        setItems(data);
+      }
   };
 
   useEffect(() => { loadItems(); }, []);
 
+  const sortedItems = [...items].sort((a, b) => {
+    if (sortBy === "newest") return b.id - a.id;
+    if (sortBy === "oldest") return a.id - b.id;
+    return 0;
+  });
+
   const handleAdd = async () => {
-    if (!urlInput) return;
+    if (!urlInput.trim()) {
+      alert("Please enter a link or article");
+      return;
+    }
+    
+    if (!targetPrice || Number(targetPrice) <= 0) {
+      alert("Please set a valid Target Price to start tracking");
+      return;
+    }
+
     setLoading(true);
+    setIsAdding(true);
+    
     try {
       const res = await apiFetch("/items", {
         method: "POST",
-        body: JSON.stringify({ url: urlInput, targetPrice: targetPrice ? Number(targetPrice) : null }),
+        body: JSON.stringify({ 
+          url: urlInput, 
+          targetPrice: Number(targetPrice) 
+        }),
       });
+
       if (res.ok) {
         setUrlInput("");
         setTargetPrice("");
-        loadItems();
+        await loadItems();
       } else {
-        alert("Ошибка добавления");
+        const errorData = await res.json();
+        alert(errorData.message || "Error adding item");
       }
-    } catch { alert("Ошибка сети"); }
-    setLoading(false);
+    } catch (e) {
+      alert("Connection error");
+    } finally {
+      setLoading(false);
+      setIsAdding(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -79,44 +111,63 @@ export default function WbDashboard() {
       <section className="section">
         <div className="section-header">
           <h2 className="section-title">Tracking ({items.length})</h2>
-          <span className="section-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
-                <rect width="256" height="256" fill="none"></rect>
-                <line x1="40" y1="128" x2="216" y2="128" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></line>
-                <polyline points="144 56 216 128 144 200" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></polyline>
-            </svg>
-          </span>
+          
+          <select 
+            className="filter-select" 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+          </select>
         </div>
 
         <div className="product-grid">
-          {items.map(item => (
-            <article className="product" key={item.id}>
-              <div className="product-image">
-                <img src={item.imageUrl} alt={item.name} />
-              </div>
-              <div className="product-content">
-                <h3 className="product-title">{item.name}</h3>
-                <div style={{fontSize: '0.75rem', color: '#999', marginBottom: '5px'}}>
-                    Art: {item.article}
-                </div>
-                
-                {item.targetPrice && (
-                    <div style={{fontSize: '0.7rem', color: '#10b981', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', width: 'fit-content'}}>
-                        Goal: {item.targetPrice} ₽
-                    </div>
-                )}
-
-                <div className="product-info">
-                  <span className="product-price">{item.currentPrice} ₽</span>
-                  <button className="product-btn product-btn--delete" onClick={() => handleDelete(item.id)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" width="16" height="16">
-                      <line x1="200" y1="56" x2="56" y2="200" stroke="currentColor" strokeWidth="20" strokeLinecap="round"/>
-                      <line x1="200" y1="200" x2="56" y2="56" stroke="currentColor" strokeWidth="20" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
+          {/* Плейсхолдер во время добавления */}
+          {isAdding && (
+            <article className="product skeleton-card">
+              <div className="skeleton-shimmer"></div>
             </article>
+          )}
+
+          {sortedItems.map(item => (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              key={item.id}
+            >
+              <article className="product">
+                <div className="product-image">
+                  <img src={item.imageUrl} alt={item.name} />
+                </div>
+                <div className="product-content">
+                  <h3 className="product-title">{item.name}</h3>
+                  <div style={{fontSize: '0.75rem', color: '#999', marginBottom: '5px', padding: '2px 6px'}}>
+                      Art: {item.article}
+                  </div>
+                
+                  {item.targetPrice && (
+                      <div style={{fontSize: '0.7rem', color: '#10b981', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', width: 'fit-content'}}>
+                          Target: {item.targetPrice} ₽
+                      </div>
+                  )}
+                  <div className="product-info">
+                    <span className="product-price">{item.currentPrice} ₽</span>
+                    <button className="product-btn" onClick={() => window.open(`https://www.wildberries.ru/catalog/${item.article}/detail.aspx`, '_blank')}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </button>
+                    <button className="product-btn product-btn--delete" onClick={() => handleDelete(item.id)}>
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </motion.div>
           ))}
         </div>
       </section>

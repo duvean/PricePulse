@@ -57,6 +57,10 @@ export default function App() {
     </motion.div>
   );
 
+  const userAvatar = user?.telegramAvatar?.startsWith('http') 
+    ? user.telegramAvatar 
+    : user?.telegramAvatar ? `http://localhost:3000${user.telegramAvatar}` : null;
+    
   return (
     <div className="app">
       {/* HEADER */}
@@ -103,10 +107,14 @@ export default function App() {
           </Link>
           
           <Link to="/profile" className={`menu-bar-item ${location.pathname === '/profile' ? 'active' : ''}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256">
-               <circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" strokeMiterlimit="10" strokeWidth="16"></circle>
-               <path d="M31,216a112,112,0,0,1,194,0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path>
-            </svg>
+            {userAvatar ? (
+              <img src={userAvatar} alt="Profile" className="menu-bar-avatar" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256">
+                <circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" strokeMiterlimit="10" strokeWidth="16"></circle>
+                <path d="M31,216a112,112,0,0,1,194,0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></path>
+              </svg>
+            )}
             <span>Profile</span>
           </Link>
         </nav>

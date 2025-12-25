@@ -118,8 +118,9 @@ body::before {
 .app-body {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 100px; /* Отступ под футер */
+  padding-bottom: 120px;
   padding-top: 10px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .section { margin-bottom: 2rem; }
@@ -329,4 +330,76 @@ body::before {
     background: var(--c-purple-500); color: white;
     font-weight: 700; box-shadow: 0 5px 15px rgba(119, 98, 255, 0.4);
     margin-top: 10px;
+}
+
+/* Аватар в навбаре */
+.menu-bar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+  transition: 0.2s;
+}
+.active .menu-bar-avatar {
+  border-color: var(--c-purple-500);
+}
+
+/* Skeleton Loader */
+.skeleton-card {
+  background: var(--c-grey-000);
+  border-radius: 15px;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.skeleton-shimmer {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #f3f0ff 25%,
+    #e9e4ff 50%,
+    #f3f0ff 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Стили для селектора фильтра */
+.filter-select {
+  appearance: none; /* Убираем стандартную стрелку браузера */
+  background-color: var(--c-grey-000);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%237d7d80' viewBox='0 0 256 256'%3E%3Cpolyline points='208 96 128 176 48 96' fill='none' stroke='%237d7d80' stroke-linecap='round' stroke-linejoin='round' stroke-width='16'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  border: 0px;
+  color: var(--c-grey-700);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 28px 8px 12px;
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(150, 132, 254, 0.1);
+}
+
+.filter-select:focus {
+  border-color: var(--c-purple-500);
+  box-shadow: 0 0 0 2px rgba(119, 98, 255, 0.2);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+  row-gap: 5rem;
+  padding: 4rem var(--inner-gutter) 105px;
 }
