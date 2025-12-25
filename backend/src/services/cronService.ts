@@ -1,10 +1,12 @@
 import cron from 'node-cron';
 import { Item } from '../models/Item.js';
+import { User } from '../models/User.js';
 import { parseWbItem } from './wbService.js';
+import { sendPriceNotification } from './telegramService.js';
 
 export const initCronTasks = () => {
     // '0 * * * *' - каждый час
-    cron.schedule('*/5 * * * *', async () => {
+    cron.schedule('*/30 * * * *', async () => {
         const globalStartTime = performance.now();
         console.log('--- Запуск фонового обновления цен ---');
     
@@ -30,6 +32,17 @@ export const initCronTasks = () => {
 
                         if (item.targetPrice && freshData.currentPrice <= item.targetPrice) {
                             console.log(`    Цена упала! "${item.name}": ${freshData.currentPrice} ₽ (Порог: ${item.targetPrice})`);
+                            const user = await User.findByPk(item.userId);
+                            if (user?.telegramId) {
+                                const message = `
+                            🔔  <b>Снижение цены!</b>
+                                <b>Товар:</b> ${item.name}
+                                <b>Новая цена:</b> ${freshData.currentPrice} ₽
+                                <b>Ваш порог:</b> ${item.targetPrice} ₽
+                                <a href="https://www.wildberries.ru/catalog/${item.article}/detail.aspx">Перейти к товару</a>`;
+                                
+                                await sendPriceNotification(user.telegramId, message);
+                            }
                         }
 
                         await item.update({

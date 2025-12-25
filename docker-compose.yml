@@ -15,11 +15,13 @@ services:
       - "3000:3000"
     volumes:
       - ./backend:/app
+      - ./backend/uploads:/app/uploads
       - /app/node_modules
       - /app/dist
     environment:
       - DATABASE_URL=postgres://user:password@db:5432/todo_db
       - JWT_SECRET=your_jwt_secret_key
+      - TELEGRAM_BOT_TOKEN=8103651866:AAHWkLswMqbMtPmfcrik8v13ZGs_t4wn0ZA
     depends_on:
       - db
     restart: always

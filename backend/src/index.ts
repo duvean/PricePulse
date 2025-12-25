@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
 import { sequelize } from './config/database.js';
 import { initCronTasks } from './services/cronService.js';
 import authRoutes from './routes/auth.js';
@@ -7,11 +9,17 @@ import itemRoutes from './routes/item.js';
 import './models/index.js';
 
 const app = express();
+
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
+
 app.use(cors());
 app.use(express.json());
-
 app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
+app.use('/uploads', express.static(uploadsDir));
 
 const PORT = 3000;
 

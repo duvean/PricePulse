@@ -3,9 +3,10 @@ import { jwtDecode } from "jwt-decode";
 import "./css/normal.css";
 import "./css/cursed.css";
 
-import WbDashboard from "./components/WbDashboard"; // Новый дашборд
+import WbDashboard from "./components/WbDashboard";
+import Profile from "./components/Profile";
 import { Auth } from "./components/Auth";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
 
 export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("todo_token"));
@@ -60,6 +61,10 @@ export default function App() {
     <div className={isCursed ? "cursed-theme" : "normal-theme"}>
       <div className="app-container">
         <header>
+          <nav>
+            <Link to="/dashboard">Мои товары</Link>
+            <Link to="/profile">Личный кабинет</Link>
+          </nav>
           {token && (
             <div className="header-bar">
               <div className="user-info">
@@ -73,8 +78,8 @@ export default function App() {
         </header>
 
         <Routes>
-          {/* Главная страница теперь ведет на WB дашборд */}
           <Route path="/" element={<WbDashboard />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<h2>404 - Страница не найдена</h2>} />
         </Routes>
 
