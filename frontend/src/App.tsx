@@ -60,7 +60,7 @@ export default function App() {
   const userAvatar = user?.telegramAvatar?.startsWith('http') 
     ? user.telegramAvatar 
     : user?.telegramAvatar ? `http://localhost:3000${user.telegramAvatar}` : null;
-    
+
   return (
     <div className="app">
       {/* HEADER */}
@@ -73,7 +73,12 @@ export default function App() {
             <line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"></line>
           </svg>
         </button>
-        <span style={{fontWeight: 700, color: '#7d7d80'}}>PRICE PULSE</span>
+        <div className="app-header-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" />
+            </svg>
+            PRICE PULSE
+        </div>
         <button className="app-header-btn app-header-btn--notification">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256">
             <rect width="256" height="256" fill="none"></rect>

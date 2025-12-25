@@ -53,6 +53,7 @@ export default function Profile({ userData, onRefresh, onLogout }: any) {
             </div>
 
             <button 
+                className="product-btn"
                 onClick={onLogout}
                 style={{width: '100%', marginTop: '20px', padding: '15px', color: '#6b7280', textDecoration: 'underline'}}
             >
