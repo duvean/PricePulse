@@ -58,6 +58,23 @@ router.post('/', authenticateToken, async (req: any, res) => {
     }
 });
 
+router.patch('/:id', authenticateToken, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+        const { targetPrice } = req.body;
+
+        const item = await Item.findOne({ where: { id, userId: req.user.userId } });
+        if (!item) return res.status(404).json({ error: 'Item not found' });
+
+        await item.update({
+            targetPrice: targetPrice,
+            lastNotifiedPrice: null 
+        });
+
+        res.json(item);
+    } catch (e) { res.status(500).json({ error: 'Error' }); }
+});
+
 router.delete('/:id', authenticateToken, async (req: any, res) => {
     try {
         await Item.destroy({ where: { id: req.params.id, userId: req.user.userId } });

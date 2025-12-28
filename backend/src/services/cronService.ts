@@ -3,6 +3,7 @@ import { Item } from '../models/Item.js';
 import { User } from '../models/User.js';
 import { parseWbItem } from './wbService.js';
 import { sendPriceNotification } from './telegramService.js';
+import { LocalNotification } from '../models/Notification.js';
 
 export const initCronTasks = () => {
     // '0 * * * *' - каждый час
@@ -26,22 +27,42 @@ export const initCronTasks = () => {
                 for (const item of itemsToProcess) {
                     const itemStartTime = performance.now();
                     try {
-                        console.log(`    [Попытка ${attempt}] Обновление: ${item.article}`);
+                        console.log(`[Попытка ${attempt}] Обновление: ${item.article}`);
     
                         const freshData = await parseWbItem(item.article.toString());
 
-                        if (item.targetPrice && freshData.currentPrice <= item.targetPrice) {
-                            console.log(`    Цена упала! "${item.name}": ${freshData.currentPrice} ₽ (Порог: ${item.targetPrice})`);
-                            const user = await User.findByPk(item.userId);
-                            if (user?.telegramId) {
-                                const message = `
+                        if (item.targetPrice && freshData.currentPrice <= item.targetPrice) {                        
+                            if (item.lastNotifiedPrice === null || freshData.currentPrice < item.lastNotifiedPrice) {
+                                console.log(`Цена на "${item.name}" упала до ${freshData.currentPrice} ₽ (Цель: ${item.targetPrice} ₽)`);
+            
+                                const tgMessage = `
 🔔  <b>Снижение цены!</b>
          <b>Товар:</b> ${item.name}
          <b>Новая цена:</b> ${freshData.currentPrice} ₽
          <b>Ваш порог:</b> ${item.targetPrice} ₽
          <a href="https://www.wildberries.ru/catalog/${item.article}/detail.aspx">Перейти к товару</a>`;
-         
-                                await sendPriceNotification(user.telegramId, message);
+
+const localMessage = `🔔 Снижение цены!
+      Товар: ${item.name}
+      Новая цена: ${freshData.currentPrice} ₽
+      Ваш порог: ${item.targetPrice} ₽`; 
+
+                                // 1. Локальное уведомление
+                                await LocalNotification.create({
+                                    userId: item.userId,
+                                    message: localMessage,
+                                    productId: item.id,
+                                    isRead: false
+                                });
+
+                                // 2. Уведомление в тг
+                                const user = await User.findByPk(item.userId);
+                                if (user?.telegramId) {
+                                    await sendPriceNotification(user.telegramId, tgMessage);
+                                }
+
+                                await item.update({ lastNotifiedPrice: freshData.currentPrice });
+                                console.log(`🔔 Уведомление отправлено для ${item.article}`);
                             }
                         }
 
@@ -53,14 +74,14 @@ export const initCronTasks = () => {
 
                         const itemEndTime = performance.now();
                         const itemDuration = ((itemEndTime - itemStartTime) / 1000).toFixed(2);
-                        console.log(`    [⏱] Товар ${item.article} обновлен за ${itemDuration} сек.`);
+                        console.log(`[⏱] Товар ${item.article} обновлен за ${itemDuration} сек.`);
 
                         await new Promise(res => setTimeout(res, 5000));
 
                     } catch (itemError: any) {
                         const itemEndTime = performance.now();
                         const itemDuration = ((itemEndTime - itemStartTime) / 1000).toFixed(2);
-                        console.error(`    [⏱] Ошибка обхода ${item.article} после ${itemDuration} сек: ${itemError.message}`);
+                        console.error(`[⏱] Ошибка обхода ${item.article} после ${itemDuration} сек: ${itemError.message}`);
                         failedItems.push(item);
                     }
                 }
@@ -69,7 +90,7 @@ export const initCronTasks = () => {
             }
 
             if (itemsToProcess.length > 0) {
-                console.error(`    Не удалось обновить ${itemsToProcess.length} товаров после ${MAX_ATTEMPTS} попыток.`);
+                console.error(`Не удалось обновить ${itemsToProcess.length} товаров после ${MAX_ATTEMPTS} попыток.`);
             }
 
         } catch (error) {

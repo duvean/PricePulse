@@ -10,6 +10,7 @@ export class Item extends Model {
   declare targetPrice: number;
   declare imageUrl: string;
   declare userId: number;
+  declare lastNotifiedPrice: number;
 }
 
 Item.init({
@@ -20,5 +21,6 @@ Item.init({
   oldPrice: { type: DataTypes.INTEGER, defaultValue: 0 },
   targetPrice: { type: DataTypes.INTEGER, allowNull: true },
   imageUrl: { type: DataTypes.TEXT },
-  userId: { type: DataTypes.INTEGER, allowNull: false }
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  lastNotifiedPrice: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null }
 }, { sequelize, modelName: 'item' });

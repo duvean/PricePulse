@@ -6,6 +6,7 @@ import { sequelize } from './config/database.js';
 import { initCronTasks } from './services/cronService.js';
 import authRoutes from './routes/auth.js';
 import itemRoutes from './routes/item.js';
+import notificationRoutes from './routes/notifications.js';
 import './models/index.js';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/uploads', express.static(uploadsDir));
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = 3000;
 

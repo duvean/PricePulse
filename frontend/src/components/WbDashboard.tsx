@@ -3,6 +3,38 @@ import { motion } from "framer-motion";
 import { apiFetch } from "../api";
 import { WbItem } from "../interfaces";
 
+const PriceEditor = ({ id, initialPrice, onUpdate }: any) => {
+    const [price, setPrice] = useState(initialPrice || "");
+    const [isEditing, setIsEditing] = useState(false);
+
+    const handleCommit = () => {
+        if (price !== initialPrice) {
+            onUpdate(id, Number(price));
+        }
+        setIsEditing(false);
+    };
+
+    if (!isEditing) {
+        return (
+            <div className="price-display" onClick={() => setIsEditing(true)}>
+                Цель: <span className="target-val">{initialPrice ? `${initialPrice} ₽` : "Не задано"}</span> ✎
+            </div>
+        );
+    }
+
+    return (
+        <input 
+            type="number" 
+            className="price-edit-input"
+            autoFocus
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            onBlur={handleCommit}
+            onKeyDown={(e) => e.key === "Enter" && handleCommit()}
+        />
+    );
+};
+
 export default function WbDashboard() {
   const [items, setItems] = useState<WbItem[]>([]);
   const [urlInput, setUrlInput] = useState("");
@@ -70,6 +102,18 @@ export default function WbDashboard() {
     if (!confirm("Удалить?")) return;
     const res = await apiFetch(`/items/${id}`, { method: "DELETE" });
     if (res.ok) setItems(items.filter(i => i.id !== id));
+  };
+
+  const handleUpdatePrice = async (id: number, newPrice: number) => {
+      try {
+          const res = await apiFetch(`/items/${id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ targetPrice: newPrice })
+          });
+          if (res.ok) {
+              setItems(items.map(i => i.id === id ? { ...i, targetPrice: newPrice } : i));
+          }
+      } catch (e) { console.error(e); }
   };
 
   return (
@@ -147,11 +191,9 @@ export default function WbDashboard() {
                       Art: {item.article}
                   </div>
                 
-                  {item.targetPrice && (
-                      <div style={{fontSize: '0.7rem', color: '#10b981', background: '#ecfdf5', padding: '2px 6px', borderRadius: '4px', width: 'fit-content'}}>
-                          Target: {item.targetPrice} ₽
-                      </div>
-                  )}
+                  <div className="threshold-info">
+                     <PriceEditor id={item.id} initialPrice={item.targetPrice} onUpdate={handleUpdatePrice} />
+                  </div>
                   <div className="product-info">
                     <span className="product-price">{item.currentPrice} ₽</span>
                     <button className="product-btn" onClick={() => window.open(`https://www.wildberries.ru/catalog/${item.article}/detail.aspx`, '_blank')}>
