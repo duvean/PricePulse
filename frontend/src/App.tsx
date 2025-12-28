@@ -48,6 +48,15 @@ export default function App() {
       validateSession();
   }, [token]);
 
+  useEffect(() => {
+      const refreshData = async () => {
+          if (!token) return;
+          await fetchNotificationsCount();
+      };
+      const interval = setInterval(refreshData, 10000);
+      return () => clearInterval(interval);
+  }, [token]);
+
   const fetchNotificationsCount = async () => {
       try {
         const res = await apiFetch("/notifications/unread");

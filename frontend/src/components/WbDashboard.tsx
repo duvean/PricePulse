@@ -70,7 +70,42 @@ export default function WbDashboard() {
       }
   };
 
-  useEffect(() => { loadItems(); }, []);
+  useEffect(() => {
+      loadItems();
+
+      const interval = setInterval(async () => {
+        try {
+            const res = await apiFetch("/items");
+            if (res.ok) {
+                const newData = await res.json();
+                
+                setItems(prevItems => {
+                    // Если количество товаров изменилось, обновляем всё
+                    if (prevItems.length !== newData.length) return newData;
+
+                    // Если количество то же, меняем только данные объектов
+                    return prevItems.map(item => {
+                        const newItem = newData.find((n: any) => n.id === item.id);
+                        if (!newItem) return item;
+                        
+                        // Проверяем, изменилось ли что-то важное
+                        if (
+                            item.lastNotifiedPrice !== newItem.lastNotifiedPrice ||
+                            item.currentPrice !== newItem.currentPrice ||
+                            item.targetPrice !== newItem.targetPrice
+                        ) {
+                            return { ...item, ...newItem };
+                        }
+                        return item;
+                    });
+                });
+            }
+        } catch (e) {
+            console.error("Ошибка фонового обновления");
+        }
+    }, 10000);
+      return () => clearInterval(interval);
+  }, []);
 
   const filteredAndSortedItems = useMemo(() => {
     return [...items]
@@ -236,10 +271,11 @@ export default function WbDashboard() {
 
           {filteredAndSortedItems.map(item => {
             return (
-            <motion.div
+            <motion.article
               layout
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 , scale: 0.9 }}
               key={item.id}
             >
               <article className="product">
@@ -275,7 +311,7 @@ export default function WbDashboard() {
                   </div>
                 </div>
               </article>
-            </motion.div>
+            </motion.article>
           )})}
         </div>
       </section>
