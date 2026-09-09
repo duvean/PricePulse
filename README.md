@@ -6,6 +6,8 @@
 
 Проект создан как pet-project для практики разработки full-stack приложения на TypeScript с React, Node.js, PostgreSQL и Docker.
 
+![Список отслеживаемых товаров](docs/screenshots/main_screen.jpg)
+
 ## Возможности
 
 * Авторизация через Telegram
