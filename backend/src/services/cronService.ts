@@ -1,16 +1,17 @@
 import cron from 'node-cron';
 import { Item } from '../models/Item.js';
 import { User } from '../models/User.js';
-import { parseWbItem } from './wbService.js';
-import { sendPriceNotification } from './telegramService.js';
+import { PriceHistory } from '../models/PriceHistory.js';
 import { LocalNotification } from '../models/Notification.js';
+import { sendPriceNotification } from './telegramService.js';
+import { parseWbItem } from './wbService.js';
 
 export const initCronTasks = () => {
     // '0 * * * *' - каждый час
     cron.schedule('*/2 * * * *', async () => {
         const globalStartTime = performance.now();
         console.log('--- Запуск фонового обновления цен ---');
-    
+
         try {
             let itemsToProcess = await Item.findAll();
             let attempt = 1;
@@ -28,13 +29,28 @@ export const initCronTasks = () => {
                     const itemStartTime = performance.now();
                     try {
                         console.log(`[Попытка ${attempt}] Обновление: ${item.article}`);
-    
+
                         const freshData = await parseWbItem(item.article.toString());
 
-                        if (item.targetPrice && freshData.currentPrice <= item.targetPrice) {                        
+                        const updatePayload: any = {
+                            currentPrice: freshData.currentPrice,
+                            oldPrice: freshData.oldPrice,
+                            name: freshData.name
+                        };
+
+                        if (freshData.currentPrice !== item.currentPrice) {
+                            await PriceHistory.create({
+                                itemId: item.id,
+                                price: freshData.currentPrice,
+                                createdAt: new Date()
+                            });
+                            updatePayload.lastPriceChange = new Date();
+                        }
+
+                        if (item.targetPrice && freshData.currentPrice <= item.targetPrice) {
                             if (item.lastNotifiedPrice === null || freshData.currentPrice < item.lastNotifiedPrice) {
                                 console.log(`Цена на "${item.name}" упала до ${freshData.currentPrice} ₽ (Цель: ${item.targetPrice} ₽)`);
-            
+
                                 const tgMessage = `
 🔔  <b>Снижение цены!</b>
          <b>Товар:</b> ${item.name}
@@ -42,10 +58,10 @@ export const initCronTasks = () => {
          <b>Ваш порог:</b> ${item.targetPrice} ₽
          <a href="https://www.wildberries.ru/catalog/${item.article}/detail.aspx">Перейти к товару</a>`;
 
-const localMessage = `🔔 Снижение цены!
+                                const localMessage = `🔔 Снижение цены!
       Товар: ${item.name}
       Новая цена: ${freshData.currentPrice} ₽
-      Ваш порог: ${item.targetPrice} ₽`; 
+      Ваш порог: ${item.targetPrice} ₽`;
 
                                 // 1. Локальное уведомление
                                 await LocalNotification.create({
@@ -61,19 +77,14 @@ const localMessage = `🔔 Снижение цены!
                                     await sendPriceNotification(user.telegramId, tgMessage);
                                 }
 
-                                await item.update({ lastNotifiedPrice: freshData.currentPrice });
+                                updatePayload.lastNotifiedPrice = freshData.currentPrice;
                                 console.log(`🔔 Уведомление отправлено для ${item.article}`);
                             }
                         }
 
-                        await item.update({
-                            currentPrice: freshData.currentPrice,
-                            oldPrice: freshData.oldPrice,
-                            name: freshData.name
-                        });
+                        await item.update(updatePayload);
 
-                        const itemEndTime = performance.now();
-                        const itemDuration = ((itemEndTime - itemStartTime) / 1000).toFixed(2);
+                        const itemDuration = ((performance.now() - itemStartTime) / 1000).toFixed(2);
                         console.log(`[⏱] Товар ${item.article} обновлен за ${itemDuration} сек.`);
 
                         await new Promise(res => setTimeout(res, 5000));

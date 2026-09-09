@@ -1,56 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import { apiFetch } from "../api";
 import { WbItem } from "../interfaces";
-
-const PriceEditor = ({ id, initialPrice, onUpdate, isReached }: any) => {
-  const [price, setPrice] = useState(initialPrice || "");
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    setPrice(initialPrice || "");
-  }, [initialPrice]);
-
-  const handleCommit = () => {
-    const numericPrice = Number(price);
-    if (numericPrice !== initialPrice && !isNaN(numericPrice)) {
-      onUpdate(id, numericPrice);
-    }
-    setIsEditing(false);
-  };
-
-  if (!isEditing) {
-    return (
-      <div
-        className={`price-display ${isReached ? 'status-reached' : 'status-waiting'}`}
-        onClick={() => setIsEditing(true)}
-      >
-        <span className="status-icon">
-          {isReached ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          )}
-        </span>
-        Цель: <span className="target-val">{initialPrice ? `${initialPrice.toLocaleString()} ₽` : "Не задано"}</span>
-        <p style={{ color: "GrayText" }}>✎</p>
-      </div>
-    );
-  }
-
-  return (
-    <input
-      type="number"
-      className="price-edit-input"
-      autoFocus
-      value={price}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) => setPrice(e.target.value)}
-      onBlur={handleCommit}
-      onKeyDown={(e) => e.key === "Enter" && handleCommit()}
-    />
-  );
-};
+import ProductCard from './ProductCard';
+import HistoryModal from "./HistoryModal";
 
 export default function WbDashboard() {
   const [items, setItems] = useState<WbItem[]>([]);
@@ -62,6 +14,7 @@ export default function WbDashboard() {
   const [showReached, setShowReached] = useState(true);
   const [showWaiting, setShowWaiting] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [historyItem, setHistoryItem] = useState<any>(null);
 
   const loadItems = async () => {
     const res = await apiFetch("/items");
@@ -270,51 +223,24 @@ export default function WbDashboard() {
             </article>
           )}
 
-          {filteredAndSortedItems.map(item => {
-            return (
-              <motion.article
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                key={item.id}
-              >
-                <article className="product">
-                  <div className="product-image">
-                    <img src={item.imageUrl} alt={item.name} />
-                  </div>
-                  <div className="product-content">
-                    <h3 className="product-title">{item.name}</h3>
-                    <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: '5px', padding: '2px 6px' }}>
-                      Art: {item.article}
-                    </div>
+          {filteredAndSortedItems.map(item => (
+            <ProductCard
+              key={item.id}
+              item={item}
+              onUpdatePrice={handleUpdatePrice}
+              onShowHistory={(item) => setHistoryItem(item)}
+              onDelete={handleDelete}
+            />
+          ))}
 
-                    <div className="threshold-info">
-                      <PriceEditor
-                        id={item.id}
-                        initialPrice={item.targetPrice}
-                        onUpdate={handleUpdatePrice}
-                        isReached={item.lastNotifiedPrice !== null}
-                      />
-                    </div>
-                    <div className="product-info">
-                      <span className="product-price">{item.currentPrice} ₽</span>
-                      <button className="product-btn" onClick={() => window.open(`https://www.wildberries.ru/catalog/${item.article}/detail.aspx`, '_blank')}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                          <polyline points="15 3 21 3 21 9"></polyline>
-                          <line x1="10" y1="14" x2="21" y2="3"></line>
-                        </svg>
-                      </button>
-                      <button className="product-btn product-btn--delete" onClick={() => handleDelete(item.id)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              </motion.article>
-            )
-          })}
+          {historyItem && (
+            <HistoryModal
+              itemId={historyItem.id}
+              itemName={historyItem.name}
+              apiFetch={apiFetch}
+              onClose={() => setHistoryItem(null)}
+            />
+          )}
         </div>
       </section>
     </>

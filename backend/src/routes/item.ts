@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { Item } from '../models/Item.js';
+import { PriceHistory } from '../models/PriceHistory.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { parseWbItem } from '../services/wbService.js';
 import { parseOzonItem } from '../services/ozonService.js';
@@ -73,6 +74,19 @@ router.patch('/:id', authenticateToken, async (req: any, res) => {
 
         res.json(item);
     } catch (e) { res.status(500).json({ error: 'Error' }); }
+});
+
+router.get('/:id/history', authenticateToken, async (req, res) => {
+    try {
+        const history = await PriceHistory.findAll({
+            where: { itemId: req.params.id },
+            order: [['createdAt', 'ASC']],
+            attributes: ['price', 'createdAt']
+        });
+        res.json(history);
+    } catch (e) {
+        res.status(500).json({ error: 'Ошибка получения истории' });
+    }
 });
 
 router.delete('/:id', authenticateToken, async (req: any, res) => {

@@ -1,15 +1,10 @@
 import { User } from './User.js';
 import { Item } from './Item.js';
+import { PriceHistory } from './PriceHistory.js';
 
-// Связи User <-> Item
-// У пользователя может быть много товаров
-User.hasMany(Item, { 
-    foreignKey: 'userId', 
-    as: 'items',
-    onDelete: 'CASCADE' // Если удалить юзера, удалятся и его сохраненки
-});
-
-// Товар принадлежит пользователю
+User.hasMany(Item, { foreignKey: 'userId', as: 'items', onDelete: 'CASCADE' });
 Item.belongsTo(User, { foreignKey: 'userId' });
+Item.hasMany(PriceHistory, { foreignKey: 'itemId', as: 'history' });
+PriceHistory.belongsTo(Item, { foreignKey: 'itemId' });
 
 export { User, Item };
